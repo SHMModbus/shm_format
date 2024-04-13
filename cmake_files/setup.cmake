@@ -5,22 +5,22 @@
 
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
-if(CLANG_TIDY)
+if (CLANG_TIDY)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        if (${CLANG_TIDY_NO_ERRORS}) 
-            set (CLANG_TIDY_CONFIG_FILE ${CMAKE_SOURCE_DIR}/.clang-tidy-noerrors)
-        else()
-            set (CLANG_TIDY_CONFIG_FILE ${CMAKE_SOURCE_DIR}/.clang-tidy)
-        endif()
+        if (${CLANG_TIDY_NO_ERRORS})
+            set(CLANG_TIDY_CONFIG_FILE ${CMAKE_SOURCE_DIR}/.clang-tidy-noerrors)
+        else ()
+            set(CLANG_TIDY_CONFIG_FILE ${CMAKE_SOURCE_DIR}/.clang-tidy)
+        endif ()
 
         set(CMAKE_CXX_CLANG_TIDY
                 clang-tidy
                 -config-file=${CLANG_TIDY_CONFIG_FILE})
         message(STATUS "clang-tidy enabled: ${CLANG_TIDY_CONFIG_FILE}")
-    else()
+    else ()
         message(WARNING "clang-tidy requested, but only available if clang is selected as compiler")
-    endif()
-endif()
+    endif ()
+endif ()
 
 # add executable
 add_executable(${Target})
@@ -65,16 +65,16 @@ if (ENABLE_MULTITHREADING)
 endif ()
 
 # lto
-if(LTO_ENABLED)
+if (LTO_ENABLED)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT ipo_supported OUTPUT error)
-    if( ipo_supported )
+    if (ipo_supported)
         message(STATUS "IPO / LTO enabled")
         set_property(TARGET ${Target} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-    else()
+    else ()
         message(STATUS "IPO / LTO not supported: <${error}>")
-    endif()
-endif()
+    endif ()
+endif ()
 
 # ----------------------------------------------- doxygen documentation ------------------------------------------------
 # ======================================================================================================================
@@ -123,35 +123,35 @@ if (CLANG_FORMAT)
         message(STATUS "Added clang format target(s)")
     else ()
         message(WARNING "Clang format enabled, but file ${CLANG_FORMAT_FILE}  does not exist")
-    endif()
+    endif ()
 endif ()
 
 # add test targets
-if(ENABLE_TEST)
+if (ENABLE_TEST)
     enable_testing()
     add_subdirectory("test")
-endif()
+endif ()
 
 # generate version_info.cpp
 # output is not the acutal generated file --> command is always executed
 add_custom_command(
-    OUTPUT
+        OUTPUT
         ${CMAKE_SOURCE_DIR}/src/generated/version_info_cpp
 
-    COMMAND
+        COMMAND
         bash ${CMAKE_SOURCE_DIR}/scripts/gen_version_info_cpp.sh ${PROJECT_NAME}
 
-    WORKING_DIRECTORY
+        WORKING_DIRECTORY
         ${CMAKE_SOURCE_DIR}
 )
 
 execute_process(
-    COMMAND bash "${CMAKE_SOURCE_DIR}/scripts/gen_version_info_cpp.sh" ${PROJECT_NAME}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND bash "${CMAKE_SOURCE_DIR}/scripts/gen_version_info_cpp.sh" ${PROJECT_NAME}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 add_custom_target(${Target}_generated_version_info
-    DEPENDS ${CMAKE_SOURCE_DIR}/src/generated/version_info_cpp
+        DEPENDS ${CMAKE_SOURCE_DIR}/src/generated/version_info_cpp
 )
 
 add_dependencies(${Target} ${Target}_generated_version_info)
