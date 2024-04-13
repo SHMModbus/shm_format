@@ -22,9 +22,9 @@ int main() {
     std::cout << "SYSTEM_INFO: " << SYSTEM_INFO << '\n';
     std::cout << "CPU_WORD_BYTES: " << CPU_WORD_BYTES << '\n';
     std::cout << "GIT_HASH: " << RCS_HASH << '\n';
-    std::cout << CMAKE_Template_Project_version_info::NAME << ' ' << CMAKE_Template_Project_version_info::VERSION_STR
+    std::cout << shm_format_version_info::NAME << ' ' << shm_format_version_info::VERSION_STR
               << ' ' << "Hello CMake!!!\n";
-    std::cout << "git commit: " << CMAKE_Template_Project_version_info::GIT_HASH << '\n';
+    std::cout << "git commit: " << shm_format_version_info::GIT_HASH << '\n';
 
 #ifdef _OPENMP
 #    pragma omp parallel default(none)
