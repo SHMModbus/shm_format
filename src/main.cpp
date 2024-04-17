@@ -40,6 +40,8 @@ auto main(int argc, char **argv) -> int {
     options.add_options("shared memory")("configfile", "config file", cxxopts::value<std::string>());
     options.parse_positional({"shmname", "configfile"});
 
+    options.positional_help("SHM_NAME CFG_FILE");
+
     // parse arguments
     cxxopts::ParseResult opts;
     try {
