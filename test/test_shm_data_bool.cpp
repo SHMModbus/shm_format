@@ -48,6 +48,7 @@ int main() {
             uint8_t mem_byte  = data[addr];
             bool    mem_value = (mem_byte >> bit) & 0b1;
 
+            static_cast<void>(mem_value);
             assert(value == mem_value);
         }
     }

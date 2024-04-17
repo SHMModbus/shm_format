@@ -16,7 +16,7 @@ protected:
     const void *const data;
     const std::size_t address;
 
-    SHM_data(std::string name, const void *data [[gnu::nonnull]], std::size_t address)
+    SHM_data(std::string name, const void *data, std::size_t address)
         : name(std::move(name)), data(data), address(address) {}
 
 public:

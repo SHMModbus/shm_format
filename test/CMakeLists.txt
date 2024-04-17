@@ -19,9 +19,8 @@ function(add_format_test_target target)
         target_clangformat_setup(test_${target})
     endif()
     target_link_libraries(test_${target} PRIVATE nlohmann_json)
+    add_format_test_target(test_${target})
 endfunction()
 
 #add_test_target(${Target} "")
 #add_dependencies(test_${Target} ${Target})
-
-add_format_test_target("shm_data_bool")

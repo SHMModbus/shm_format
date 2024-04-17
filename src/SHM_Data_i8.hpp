@@ -8,7 +8,7 @@
 
 class SHM_Data_i8 final : public SHM_data {
 public:
-    SHM_Data_i8(std::string name, const void *data [[gnu::nonnull]], std::size_t address);
+    SHM_Data_i8(std::string name, const void *data, std::size_t address);
 
     [[nodiscard]] nlohmann::json get_data() const override;
 };
