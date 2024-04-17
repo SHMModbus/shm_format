@@ -7,7 +7,9 @@
 #include "generated/version_info.hpp"
 #include "parse_config_file.hpp"
 
+#include <csignal>
 #include <ctime>
+#include <cxxitimer.hpp>
 #include <cxxopts.hpp>
 #include <cxxsemaphore.hpp>
 #include <cxxshm.hpp>
@@ -35,6 +37,8 @@ auto main(int argc, char **argv) -> int {
     options.add_options("other")("data-types", "show list of supported data types");
     options.add_options("settings")(
             "p,pretty", "indent json output with <arg> spaces (0 - 255)", cxxopts::value<uint8_t>());
+    options.add_options("settings")(
+            "i,interval", "repeat with given interval (milliseconds)", cxxopts::value<unsigned>());
 
     options.add_options("shared memory")("shmname", "name of the shared memory to dump", cxxopts::value<std::string>());
     options.add_options("shared memory")("configfile", "config file", cxxopts::value<std::string>());
@@ -137,6 +141,14 @@ auto main(int argc, char **argv) -> int {
         return EX_USAGE;
     }
 
+    static volatile bool terminate        = false;
+    auto                 sig_term_handler = [](int) { terminate = true; };
+
+    if (signal(SIGINT, sig_term_handler) == SIG_ERR || signal(SIGTERM, sig_term_handler) == SIG_ERR) {
+        perror("signal");
+        return EX_OSERR;
+    }
+
     // open shared memory
     const auto                            shm_name = opts["shmname"].as<std::string>();
     std::unique_ptr<cxxshm::SharedMemory> shared_memory;
@@ -168,6 +180,7 @@ auto main(int argc, char **argv) -> int {
 
     // output data
     auto execute = [&]() {
+        static std::size_t index = 0;
         if (semaphore) {
             if (!semaphore->wait({1, 0})) {
                 std::cerr << "Failed to acquire semaphore\n";
@@ -178,7 +191,7 @@ auto main(int argc, char **argv) -> int {
         nlohmann::json result_json;
         auto          &data_list = result_json["data"];
         for (auto &a : shm_data) {
-            auto data               = a->get_data();
+            auto data                                  = a->get_data();
             data_list[data["name"].get<std::string>()] = data;
         }
 
@@ -188,9 +201,55 @@ auto main(int argc, char **argv) -> int {
         result_json["shm"]["size"]      = shared_memory->get_size();
         result_json["shm"]["semaphore"] = static_cast<bool>(semaphore);
         result_json["time"]             = std::time(nullptr);
+        result_json["index"]            = index++;
 
         std::cout << result_json.dump(opts.count("pretty") ? opts["pretty"].as<uint8_t>() : -1) << std::endl;
     };
 
-    execute();
+    const bool cyclic = opts["interval"].count();
+    if (cyclic) {
+        // check interval
+        const auto                interval     = opts["interval"].as<unsigned>();
+        static constexpr unsigned MIN_INTERVAL = 10;
+        if (interval < MIN_INTERVAL) {
+            std::cerr << "interval to short. (min: " << MIN_INTERVAL << ')';
+            return EX_USAGE;
+        }
+
+        // signal set
+        sigset_t sleep_sigset;
+        sigemptyset(&sleep_sigset);
+        sigaddset(&sleep_sigset, SIGALRM);
+        sigprocmask(SIG_BLOCK, &sleep_sigset, nullptr);
+        sigaddset(&sleep_sigset, SIGINT);   // add to sigwait, but do not block
+        sigaddset(&sleep_sigset, SIGTERM);  // add to sigwait, but do not block
+
+        // start timer
+        const struct timeval interval_time {
+            static_cast<__time_t>(interval / 1000),                           // NOLINT
+                    static_cast<__syscall_slong_t>((interval % 1000) * 1000)  // NOLINT
+        };
+        cxxitimer::ITimer_Real interval_timer(interval_time);
+        interval_timer.start();
+
+        while (true) {
+            // execute
+            execute();
+
+            if (terminate) break;
+
+            // wait for timer
+            int  sig = 0;
+            auto tmp = sigwait(&sleep_sigset, &sig);
+            if (tmp == -1) {
+                perror("sigwait");
+                exit(EX_OSERR);
+            }
+
+            if (sig != SIGALRM) break;
+        }
+
+    } else {
+        execute();
+    }
 }
