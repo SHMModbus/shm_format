@@ -177,7 +177,7 @@ auto main(int argc, char **argv) -> int {
         auto          &data_list = result_json["data"];
         for (auto &a : shm_data) {
             auto data               = a->get_data();
-            data_list[data["name"]] = data;
+            data_list[data["name"].get<std::string>()] = data;
         }
 
         if (semaphore) semaphore->post();
