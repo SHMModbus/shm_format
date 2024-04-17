@@ -36,3 +36,23 @@ find src -type f -name "*.hpp" | while read file; do
         printf " FAILED\n"
     fi
 done
+
+echo "Format test cpps: "
+find test -type f -name "*.cpp" | while read file; do
+    printf "... $file ..."
+    if clang-format -style=file -i $file ; then
+        printf " OK\n"
+    else
+        printf " FAILED\n"
+    fi
+done
+
+echo "Format test hpps: "
+find test -type f -name "*.hpp" | while read file; do
+    printf "... $file ..."
+    if clang-format -style=file -i $file ; then
+        printf " OK\n"
+    else
+        printf " FAILED\n"
+    fi
+done
