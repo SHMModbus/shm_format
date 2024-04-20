@@ -203,7 +203,11 @@ auto main(int argc, char **argv) -> int {
         result_json["time"]             = std::time(nullptr);
         result_json["index"]            = index++;
 
-        std::cout << result_json.dump(opts.count("pretty") ? opts["pretty"].as<uint8_t>() : -1) << std::endl;
+        std::cout << result_json.dump(opts.count("pretty") ? opts["pretty"].as<uint8_t>() : -1,
+                                      ' ',
+                                      true,
+                                      nlohmann::json::error_handler_t::replace)
+                  << std::endl;
     };
 
     const bool cyclic = opts["interval"].count();

@@ -24,7 +24,7 @@ option(MAKE_32_BIT_BINARY "Compile as 32 bit application. No effect on 32 bit Sy
 option(OPENMP "enable openmp" OFF)
 option(OPTIMIZE_DEBUG "apply optimizations also in debug mode" ON)
 option(CLANG_FORMAT "use clang-format" ON)
-option(CLANG_TIDY "use clang-tidy" ON)
+option(CLANG_TIDY "use clang-tidy" OFF)
 option(CLANG_TIDY_NO_ERRORS "do not treat clang-tidy warnings as errors" ON)
 option(OPTIMIZE_FOR_ARCHITECTURE "enable optimizations for specified architecture" OFF)
 option(LTO_ENABLED "enable interprocedural and link time optimizations" ON)

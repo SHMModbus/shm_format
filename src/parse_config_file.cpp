@@ -7,6 +7,7 @@
 #include "parse_config_file.hpp"
 
 #include "SHM_Data_bool.hpp"
+#include "SHM_Data_bytearray.hpp"
 #include "SHM_Data_f32b.hpp"
 #include "SHM_Data_f32br.hpp"
 #include "SHM_Data_f32l.hpp"
@@ -26,6 +27,7 @@
 #include "SHM_Data_i64l.hpp"
 #include "SHM_Data_i64lr.hpp"
 #include "SHM_Data_i8.hpp"
+#include "SHM_Data_string.hpp"
 #include "SHM_Data_u16b.hpp"
 #include "SHM_Data_u16l.hpp"
 #include "SHM_Data_u32b.hpp"
@@ -49,6 +51,7 @@
 #include <unordered_set>
 
 enum class types : uint8_t {
+    UNDEFINED,
     BOOL,
     U8,
     I8,
@@ -80,6 +83,8 @@ enum class types : uint8_t {
     F64LR,
     F64B,
     F64BR,
+    ARRAY,
+    STRING
 };
 
 static const std::unordered_map<std::string, types> TYPE_MAP {
@@ -244,12 +249,49 @@ std::vector<std::unique_ptr<SHM_data>> parse_config_file(const std::string      
                                          ": failed to parse address: bit value > 7");
         }
 
+        types       data_type     = types::UNDEFINED;
+        std::size_t length        = 0;
         const auto &data_type_str = split_line.at(1);
-        if (!TYPE_MAP.contains(data_type_str))
-            throw std::runtime_error(std::string("invalid config file: line ") + std::to_string(line_nr) +
-                                     ": unknown data type");
+        if (!TYPE_MAP.contains(data_type_str)) {
+            static const std::vector<std::pair<std::string, types>> type_prefix_map = {
+                    {"array", types::ARRAY},
+                    {"string", types::STRING},
+                    {"arr", types::ARRAY},
+                    {"str", types::STRING},
+                    {"a", types::ARRAY},
+                    {"s", types::STRING},
+            };
 
-        const auto data_type = TYPE_MAP.at(data_type_str);
+            std::size_t prefix_length = 0;
+            for (const auto &a : type_prefix_map) {
+                if (data_type_str.starts_with(a.first)) {
+                    prefix_length = a.first.length();
+                    data_type     = a.second;
+                    break;
+                }
+            }
+
+            if (data_type == types::UNDEFINED)
+                throw std::runtime_error(std::string("invalid config file: line ") + std::to_string(line_nr) +
+                                         ": unknown data type");
+
+            // get size
+            const auto length_str = data_type_str.substr(prefix_length);
+            fail                  = false;
+            idx                   = 0;
+            try {
+                length = std::stoull(length_str, &idx, 0);
+            } catch (const std::exception &) { fail = true; }
+            fail = fail || idx != length_str.size();
+
+            if (fail)
+                throw std::runtime_error(std::string("invalid config file: line ") + std::to_string(line_nr) +
+                                         ": failed to parse data type: invalid length (" + length_str + ')');
+
+
+        } else {
+            data_type = TYPE_MAP.at(data_type_str);
+        }
 
         // name: create if not specified
         std::string name;
@@ -269,6 +311,7 @@ std::vector<std::unique_ptr<SHM_data>> parse_config_file(const std::string      
         const auto shm_size = shm.get_size();
 
         auto check_shm_size = [&](std::size_t size) {
+            std::cerr << "check_size: size=" << size << " addr=" << addr << " shm_size=" << shm_size << std::endl;
             if (addr + size >= shm_size) {
                 std::ostringstream err_msg;
                 err_msg << "invalid config file: line " << line_nr << ": shared memory " << shm.get_name()
@@ -402,6 +445,14 @@ std::vector<std::unique_ptr<SHM_data>> parse_config_file(const std::string      
                 check_shm_size(sizeof(double));
                 result.emplace_back(std::make_unique<SHM_Data_f64br>(name, shm.get_addr(), addr));
                 break;
+            case types::ARRAY:
+                check_shm_size(length);
+                result.emplace_back(std::make_unique<SHM_Data_bytearray>(name, shm.get_addr(), addr, length));
+                break;
+            case types::STRING:
+                result.emplace_back(std::make_unique<SHM_Data_string>(name, shm.get_addr(), addr, length));
+                break;
+            default: throw std::runtime_error("internal error: unexpected data type");
         }
     }
 

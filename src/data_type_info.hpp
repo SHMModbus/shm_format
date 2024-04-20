@@ -71,5 +71,7 @@ static void print_data_type_info() {
     std::cout << "          - i64_badcfehg, i64_little_rev, i64lr .. 64-Bit   signed integer in little endian,  - "
                  "reversed register order"
               << '\n';
+    std::cout << "  - a<n>, arr<n>, array<n>                         Byte array of size n\n";
+    std::cout << "  - s<n>, str<n>, string<n>                        String with maximum length of n\n";
     std::cout << std::flush;
 }
