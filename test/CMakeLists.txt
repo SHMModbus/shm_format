@@ -6,7 +6,7 @@
 find_package(nlohmann_json REQUIRED)
 
 function(add_format_test_target target)
-    add_executable(test_${target} test_${target}.cpp ${shm_data_src})
+    add_executable(test_${target} test_${target}.cpp)
     add_test(test_${target} test_${target})
     enable_warnings(test_${target})
     set_definitions(test_${target})
