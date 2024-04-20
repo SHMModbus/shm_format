@@ -23,7 +23,7 @@ nlohmann::json SHM_Data_u64lr::get_data() const {
         uint64_t int_data;
         uint16_t reg_data[4];
     };
-    int_data = endian::big_to_host(data_raw);
+    int_data = endian::little_to_host(data_raw);
     std::swap(reg_data[0], reg_data[3]);
     std::swap(reg_data[1], reg_data[2]);
     json["data"] = int_data;
