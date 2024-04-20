@@ -49,7 +49,7 @@ add_format_test_target(shm_data_u64lr)
 add_format_test_target(shm_data_u64br)
 add_format_test_target(shm_data_i64lr)
 add_format_test_target(shm_data_i64br)
-# TODO byte array
+add_format_test_target(shm_data_array)
 # TODO string
 
 # TODO test config parser
