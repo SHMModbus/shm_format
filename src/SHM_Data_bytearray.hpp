@@ -14,4 +14,6 @@ public:
     SHM_Data_bytearray(std::string name, const void *data, std::size_t address, std::size_t length);
 
     [[nodiscard]] nlohmann::json get_data() const override;
+
+    [[nodiscard]] inline std::size_t get_length() const { return length; }
 };

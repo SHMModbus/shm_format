@@ -2,6 +2,7 @@
 #include "../src/parse_config_file.hpp"
 
 #include "../src/SHM_Data_bool.hpp"
+#include "../src/SHM_Data_bytearray.hpp"
 #include "../src/SHM_Data_f32b.hpp"
 #include "../src/SHM_Data_f32br.hpp"
 #include "../src/SHM_Data_f32l.hpp"
@@ -21,6 +22,7 @@
 #include "../src/SHM_Data_i64l.hpp"
 #include "../src/SHM_Data_i64lr.hpp"
 #include "../src/SHM_Data_i8.hpp"
+#include "../src/SHM_Data_string.hpp"
 #include "../src/SHM_Data_u16b.hpp"
 #include "../src/SHM_Data_u16l.hpp"
 #include "../src/SHM_Data_u32b.hpp"
@@ -133,6 +135,14 @@ int main() {
                                   "76,u64_hgfedcba\n"
                                   "77,u64_badcfehg\n"
 
+                                  "78,a16\n"
+                                  "79,arr32\n"
+                                  "80,array64\n"
+
+                                  "81,s16\n"
+                                  "82,str32\n"
+                                  "83,string64\n"
+
                                   "";
 
 
@@ -143,7 +153,7 @@ int main() {
 
     auto parse_result = parse_config_file(stream, shm);
 
-    assert(parse_result.size() == 78);
+    assert(parse_result.size() == 84);
 
     std::size_t i = 0;
     assert(dynamic_cast<SHM_Data_bool &>(*parse_result.at(i).get()).get_address() == i);
@@ -287,4 +297,24 @@ int main() {
         assert(dynamic_cast<SHM_Data_u64lr &>(*parse_result.at(i).get()).get_address() == i);
         ++i;
     }
+
+    assert(dynamic_cast<SHM_Data_bytearray &>(*parse_result.at(i).get()).get_address() == i);
+    assert(dynamic_cast<SHM_Data_bytearray &>(*parse_result.at(i).get()).get_length() == 16);
+    ++i;
+    assert(dynamic_cast<SHM_Data_bytearray &>(*parse_result.at(i).get()).get_address() == i);
+    assert(dynamic_cast<SHM_Data_bytearray &>(*parse_result.at(i).get()).get_length() == 32);
+    ++i;
+    assert(dynamic_cast<SHM_Data_bytearray &>(*parse_result.at(i).get()).get_address() == i);
+    assert(dynamic_cast<SHM_Data_bytearray &>(*parse_result.at(i).get()).get_length() == 64);
+    ++i;
+
+    assert(dynamic_cast<SHM_Data_string &>(*parse_result.at(i).get()).get_address() == i);
+    assert(dynamic_cast<SHM_Data_string &>(*parse_result.at(i).get()).get_length() == 16);
+    ++i;
+    assert(dynamic_cast<SHM_Data_string &>(*parse_result.at(i).get()).get_address() == i);
+    assert(dynamic_cast<SHM_Data_string &>(*parse_result.at(i).get()).get_length() == 32);
+    ++i;
+    assert(dynamic_cast<SHM_Data_string &>(*parse_result.at(i).get()).get_address() == i);
+    assert(dynamic_cast<SHM_Data_string &>(*parse_result.at(i).get()).get_length() == 64);
+    ++i;
 }
