@@ -452,7 +452,8 @@ std::vector<std::unique_ptr<SHM_data>> parse_config_file(const std::string      
             case types::STRING:
                 result.emplace_back(std::make_unique<SHM_Data_string>(name, shm.get_addr(), addr, length));
                 break;
-            default: throw std::runtime_error("internal error: unexpected data type");
+            case types::UNDEFINED: throw std::runtime_error("internal error: unexpected data type: UNKNOWN");
+            default: throw std::runtime_error("internal error: unexpected data type");  // NOLINT
         }
     }
 

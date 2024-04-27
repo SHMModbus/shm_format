@@ -63,6 +63,7 @@ function(clangwarn target)
     target_compile_options(${target} PUBLIC -Wno-gnu-anonymous-struct)
     target_compile_options(${target} PUBLIC -Wno-source-uses-openmp)
     target_compile_options(${target} PUBLIC -Wno-unsafe-buffer-usage)
+    target_compile_options(${target} PUBLIC -Wno-covered-switch-default)
 
 endfunction()
 
