@@ -7,4 +7,4 @@
 #include "SHM_data.hpp"
 #include <cxxshm.hpp>
 
-std::vector<std::unique_ptr<SHM_data>> parse_config_file(const std::string &file_name, const cxxshm::SharedMemory &shm);
+std::vector<std::unique_ptr<SHM_data>> parse_config_file(std::istream &input_stream, const cxxshm::SharedMemory &shm);

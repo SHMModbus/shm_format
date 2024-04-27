@@ -193,17 +193,13 @@ static const std::unordered_map<std::string, types> TYPE_MAP {
 };
 
 
-std::vector<std::unique_ptr<SHM_data>> parse_config_file(const std::string          &file_name,
-                                                         const cxxshm::SharedMemory &shm) {
-    std::ifstream cfg_file(file_name);
-    if (!cfg_file.is_open()) throw std::runtime_error(std::string("failed to open config file: ") + strerror(errno));
-
+std::vector<std::unique_ptr<SHM_data>> parse_config_file(std::istream &input_stream, const cxxshm::SharedMemory &shm) {
     std::vector<std::unique_ptr<SHM_data>> result;
     std::unordered_set<std::string>        names;
 
     std::string line;
     std::size_t line_nr = 0;
-    while (std::getline(cfg_file, line)) {
+    while (std::getline(input_stream, line)) {
         ++line_nr;
         if (line.empty()) continue;
         if (line[0] == '#') continue;

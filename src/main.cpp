@@ -172,7 +172,11 @@ auto main(int argc, char **argv) -> int {
     // shm data from config file
     std::vector<std::unique_ptr<SHM_data>> shm_data;
     try {
-        shm_data = parse_config_file(opts["configfile"].as<std::string>(), *shared_memory);
+        std::ifstream cfg_file(opts["configfile"].as<std::string>());
+        if (!cfg_file.is_open())
+            throw std::runtime_error(std::string("failed to open config file: ") + strerror(errno));
+
+        shm_data = parse_config_file(cfg_file, *shared_memory);
     } catch (const std::runtime_error &e) {
         std::cerr << e.what() << '\n';
         return EX_DATAERR;
