@@ -30,6 +30,8 @@ public:
 
     [[nodiscard]] inline const std::string &get_name() const { return name; }
 
+    [[nodiscard]] inline std::size_t get_address() const { return address; }
+
 protected:
     [[nodiscard]] nlohmann::json get_json_skeleton() const;
 };

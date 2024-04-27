@@ -14,4 +14,6 @@ public:
     SHM_Data_bool(std::string name, const void *data, std::size_t address, std::size_t bit);
 
     [[nodiscard]] nlohmann::json get_data() const override;
+
+    [[nodiscard]] inline std::size_t get_bit() const { return bit; }
 };
