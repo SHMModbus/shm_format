@@ -13,6 +13,9 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
 
+    env:
+        LD_LIBRARY_PATH: "/usr/lib/:/usr/local/lib/"
+
     steps:
     - uses: actions/checkout@v4
 
