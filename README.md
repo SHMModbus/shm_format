@@ -1,86 +1,11 @@
-# CMake Project template
+# Shared memory format
 
-This repository is a template for CMake C++ Projects.
+Read values with specified data type from shared memory.
 
-## Supported Compiilers
+## Dependencies
+- cxxopts by jarro2783 (https://github.com/jarro2783/cxxopts) (only required for building the application)
+- json by nlohmann (https://github.com/nlohmann/json)
+- cxxshm (https://github.com/NikolasK-source/cxxshm)
+- cxxsemaphore (https://github.com/NikolasK-source/cxxsemaphore)
 
-    - gcc
-    - clang
-
-## Project structure
-
-### Directory src
-Use this directory for all source files of the project.
-
-### Directory libs
-Place libraries here. This directory is added to the include path.
-
-### Directory test
-Place any test-related sources here.
-
-## Scripts
-
-### check_format.sh
-This script checks all ```*.cpp``` and ```*.hpp``` files for conformity with the file ```.clang-format```.
-
-### format.sh
-This script formats all ```*.cpp``` and ```*.hpp``` files in the src directory with clang format.
-The files are changed by it!
-
-### gen_version_info_cpp.sh
-This script generates version information files.
-It is called automatically when the target is built.
-
-## Options
-
-### Target
-The name of the executable that is generated.
-
-### STANDARD
-The minimum required C++ standard: 98, 03, 11, 14, 17, 20
-
-### ARCHITECTURE
-The CPU architecture for which the code is generated.
-It is only relevant if the option ```OPTIMIZE_FOR_ARCHITECTURE``` is enabled.
-
-### BUILD_DOC
-Enables the automatic generation of a doxygen documentation.
-Doxygen must be installed on the system and a ```Doxyfile.in``` file must be provided.
-An additional CMake target is created.
-
-### COMPILER_WARNINGS
-Enable/Disable compiler warnings.
-Should never be disabled by default!
-
-### ENABLE_MULTITHREADING
-Link the default multithreading library for the current target system.
-Prefers ```pthread``` if available.
-
-### MAKE_32_BIT_BINARY
-Forces the compiler to generate a 32 bit application by setting the ```-m32``` flag.
-
-### OPENMP
-Enables the support for openmp.
-
-### OPTIMIZE_DEBUG
-Enables Optimization ```-O3``` also in debug configuration.
-Should only be enabled if the resulting binary is too slow.
-
-### CLANG_FORMAT
-Enable automatic formatting via clang-format.
-An additional CMake target is created.
-
-### CLANG_TIDY
-Enable static code checks with clang tidy.
-An additional CMake target is created.
-
-### LTO_ENABLED
-Enable interprocedural and link time optimizations.
-
-### COMPILER_EXTENSIONS
-Enable compiler specific C++ extensions.
-Should be disabled for reasons of portability.
-
-### ENABLE_TEST
-Enable tests.
 
