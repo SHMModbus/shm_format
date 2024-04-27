@@ -311,7 +311,6 @@ std::vector<std::unique_ptr<SHM_data>> parse_config_file(const std::string      
         const auto shm_size = shm.get_size();
 
         auto check_shm_size = [&](std::size_t size) {
-            std::cerr << "check_size: size=" << size << " addr=" << addr << " shm_size=" << shm_size << std::endl;
             if (addr + size >= shm_size) {
                 std::ostringstream err_msg;
                 err_msg << "invalid config file: line " << line_nr << ": shared memory " << shm.get_name()
