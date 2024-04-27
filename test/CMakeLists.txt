@@ -50,6 +50,6 @@ add_format_test_target(shm_data_u64br)
 add_format_test_target(shm_data_i64lr)
 add_format_test_target(shm_data_i64br)
 add_format_test_target(shm_data_array)
-# TODO string
+add_format_test_target(shm_data_string)
 
 # TODO test config parser
