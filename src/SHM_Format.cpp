@@ -23,11 +23,12 @@ SHM_Format::SHM_Format(const std::string &shm_name, const std::string &config_fi
 nlohmann::json SHM_Format::execute() const {
     nlohmann::json result;
 
-    auto &data_list = result["data"];
+    nlohmann::json data_list = nlohmann::json::array();
     for (auto &a : shm_data) {
-        auto data                                  = a->get_data();
-        data_list[data["name"].get<std::string>()] = data;
+        data_list += a->get_data();
     }
+
+    result["data"] = data_list;
 
     nlohmann::json shm_json;
     shm_json["name"] = shared_memory->get_name();
