@@ -3,6 +3,7 @@
  */
 
 
+#include "SHM_Format.hpp"
 #include "data_type_info.hpp"
 #include "generated/version_info.hpp"
 #include "parse_config_file.hpp"
@@ -149,16 +150,7 @@ auto main(int argc, char **argv) -> int {
         return EX_OSERR;
     }
 
-    // open shared memory
-    const auto                            shm_name = opts["shmname"].as<std::string>();
-    std::unique_ptr<cxxshm::SharedMemory> shared_memory;
-    try {
-        shared_memory = std::make_unique<cxxshm::SharedMemory>(shm_name, true);
-    } catch (std::exception &e) {
-        std::cerr << e.what() << '\n';
-        return EX_SOFTWARE;
-    }
-
+    // open semaphore (if specified)
     std::unique_ptr<cxxsemaphore::Semaphore> semaphore;
     if (opts.count("semaphore")) {
         try {
@@ -169,21 +161,22 @@ auto main(int argc, char **argv) -> int {
         }
     }
 
-    // shm data from config file
-    std::vector<std::unique_ptr<SHM_data>> shm_data;
+    // create SHM_Format instance(s)
+    std::vector<std::unique_ptr<SHM_Format>> shm_format;
     try {
-        std::ifstream cfg_file(opts["configfile"].as<std::string>());
-        if (!cfg_file.is_open())
-            throw std::runtime_error(std::string("failed to open config file: ") + strerror(errno));
-
-        shm_data = parse_config_file(cfg_file, *shared_memory);
-    } catch (const std::runtime_error &e) {
+        const std::string &shm_name      = opts["shmname"].as<std::string>();
+        const std::string &cfg_file_path = opts["configfile"].as<std::string>();
+        shm_format.emplace_back(std::make_unique<SHM_Format>(shm_name, cfg_file_path));
+    } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
-        return EX_DATAERR;
+        return EX_SOFTWARE;
     }
 
     // output data
     auto execute = [&]() {
+        nlohmann::json result_json;
+        nlohmann::json result_data;
+
         static std::size_t index = 0;
         if (semaphore) {
             if (!semaphore->wait({1, 0})) {
@@ -192,20 +185,19 @@ auto main(int argc, char **argv) -> int {
             }
         }
 
-        nlohmann::json result_json;
-        auto          &data_list = result_json["data"];
-        for (auto &a : shm_data) {
-            auto data                                  = a->get_data();
-            data_list[data["name"].get<std::string>()] = data;
+        for (const auto &f : shm_format) {
+            const auto &shm_name  = f->get_shm_name();
+            result_data[shm_name] = f->execute();
         }
 
         if (semaphore) semaphore->post();
 
-        result_json["shm"]["name"]      = shm_name;
-        result_json["shm"]["size"]      = shared_memory->get_size();
-        result_json["shm"]["semaphore"] = static_cast<bool>(semaphore);
-        result_json["time"]             = std::time(nullptr);
-        result_json["index"]            = index++;
+        result_json["shm_data"] = result_data;
+
+        result_json["semaphore"] = static_cast<bool>(semaphore);
+        if (semaphore) result_json["semaphore_name"] = semaphore->get_name();
+        result_json["time"]  = std::time(nullptr);
+        result_json["index"] = index++;
 
         std::cout << result_json.dump(opts.count("pretty") ? opts["pretty"].as<uint8_t>() : -1,
                                       ' ',
