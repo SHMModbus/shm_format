@@ -247,7 +247,7 @@ auto main(int argc, char **argv) -> int {
         const auto                interval     = opts["interval"].as<unsigned>();
         static constexpr unsigned MIN_INTERVAL = 10;
         if (interval < MIN_INTERVAL) {
-            std::cerr << "interval to short. (min: " << MIN_INTERVAL << ')';
+            std::cerr << "interval to short. (min: " << MIN_INTERVAL << ")\n";
             return EX_USAGE;
         }
 
