@@ -43,9 +43,12 @@ auto main(int argc, char **argv) -> int {
 
     options.add_options("shared memory")("shmname", "name of the shared memory to dump", cxxopts::value<std::string>());
     options.add_options("shared memory")("configfile", "config file", cxxopts::value<std::string>());
-    options.parse_positional({"shmname", "configfile"});
+    options.add_options("shared memory")("shmnames_configfiles",
+                                         "additional shared memories and config files",
+                                         cxxopts::value<std::vector<std::string>>());
+    options.parse_positional({"shmname", "configfile", "shmnames_configfiles"});
 
-    options.positional_help("SHM_NAME CFG_FILE");
+    options.positional_help("SHM_NAME CFG_FILE [SHM_NAME CFG_FILE ...]");
 
     // parse arguments
     cxxopts::ParseResult opts;
@@ -142,6 +145,15 @@ auto main(int argc, char **argv) -> int {
         return EX_USAGE;
     }
 
+    std::vector<std::string> additional_shm_configs;
+    if (opts.count("shmnames_configfiles")) {
+        additional_shm_configs = opts["shmnames_configfiles"].as<std::vector<std::string>>();
+        if (additional_shm_configs.size() % 2 != 0) {
+            std::cerr << "no config file specified for shared memory \"" << additional_shm_configs.back() << "\"\n";
+            return EX_USAGE;
+        }
+    }
+
     static volatile bool terminate        = false;
     auto                 sig_term_handler = [](int) { terminate = true; };
 
@@ -162,14 +174,37 @@ auto main(int argc, char **argv) -> int {
     }
 
     // create SHM_Format instance(s)
+    std::unordered_set<std::string> shm_names;
+
     std::vector<std::unique_ptr<SHM_Format>> shm_format;
     try {
         const std::string &shm_name      = opts["shmname"].as<std::string>();
         const std::string &cfg_file_path = opts["configfile"].as<std::string>();
         shm_format.emplace_back(std::make_unique<SHM_Format>(shm_name, cfg_file_path));
+        shm_names.emplace(shm_name);
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         return EX_SOFTWARE;
+    }
+
+    if (!additional_shm_configs.empty()) {
+        // length is multiple of 2; checked above
+        for (std::size_t i = 0; i < additional_shm_configs.size(); i += 2) {
+            try {
+                const std::string &shm_name      = additional_shm_configs.at(i);
+                const std::string &cfg_file_path = additional_shm_configs.at(i + 1);
+
+                if (shm_names.contains(shm_name)) {
+                    std::cerr << "duplicate shared memory: " << shm_name << '\n';
+                    return EX_USAGE;
+                }
+
+                shm_format.emplace_back(std::make_unique<SHM_Format>(shm_name, cfg_file_path));
+            } catch (const std::exception &e) {
+                std::cerr << e.what() << '\n';
+                return EX_SOFTWARE;
+            }
+        }
     }
 
     // output data
