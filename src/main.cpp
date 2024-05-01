@@ -28,6 +28,8 @@ auto main(int argc, char **argv) -> int {
             "s,semaphore",
             "protect the shared memory with an existing named semaphore against simultaneous access",
             cxxopts::value<std::string>());
+    options.add_options("shared_memory")(
+            "pid", "terminate application if application with given pid is terminated.", cxxopts::value<pid_t>());
     options.add_options("other")("h,help", "print usage");
     options.add_options("version information")("version", "print version and exit");
     options.add_options("version information")("longversion",
@@ -243,6 +245,18 @@ auto main(int argc, char **argv) -> int {
 
     const bool cyclic = opts["interval"].count();
     if (cyclic) {
+        pid_t shm_owner_pid = 0;
+        if (opts.count("pid") == 0) {
+            std::cerr << "Warning: No SHM owner PID provided.\n"
+                         "         This application is NOT terminated if the owner of the shared memory closes the "
+                         "shared memory.\n"
+                         "         This application WILL NOT reconnect to the shared memory if it is recreated.\n"
+                         "         Use --pid to specify the PID of the SHM owner.\n";
+            std::cerr << std::flush;
+        } else {
+            shm_owner_pid = opts["pid"].as<pid_t>();
+        }
+
         // check interval
         const auto                interval     = opts["interval"].as<unsigned>();
         static constexpr unsigned MIN_INTERVAL = 10;
@@ -282,6 +296,19 @@ auto main(int argc, char **argv) -> int {
             }
 
             if (sig != SIGALRM) break;
+
+            // check shm owner pid
+            if (shm_owner_pid) {
+                tmp = kill(shm_owner_pid, 0);
+                if (tmp == -1) {
+                    if (errno == ESRCH) {
+                        std::cerr << "SHM owner (pid=" << shm_owner_pid << ") no longer alive.\n" << std::flush;
+                    } else {
+                        perror("failed to send signal to the SHM owner process");
+                    }
+                    break;
+                }
+            }
         }
 
     } else {
