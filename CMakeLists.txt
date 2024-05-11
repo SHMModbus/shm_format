@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.22.0 FATAL_ERROR)
 # ======================================================================================================================
 
 # project
-project(shm-format LANGUAGES CXX VERSION 0.0.1)
+project(shm-format LANGUAGES CXX VERSION 2.0.1)
 
 # settings
 set(Target "shm-format")    # Executable name (without file extension!)
