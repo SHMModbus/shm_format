@@ -42,6 +42,9 @@ auto main(int argc, char **argv) -> int {
             "p,pretty", "indent json output with <arg> spaces (0 - 255)", cxxopts::value<uint8_t>());
     options.add_options("settings")(
             "i,interval", "repeat with given interval (milliseconds)", cxxopts::value<unsigned>());
+    options.add_options("signal")("r,register-signal",
+                                  "register for SIGUSR1 on writing modbus commands. Provide pid of modbus client.",
+                                  cxxopts::value<pid_t>());
 
     options.add_options("shared memory")("shmname", "name of the shared memory to dump", cxxopts::value<std::string>());
     options.add_options("shared memory")("configfile", "config file", cxxopts::value<std::string>());
@@ -243,8 +246,9 @@ auto main(int argc, char **argv) -> int {
                   << std::endl;
     };
 
-    const bool cyclic = opts["interval"].count();
-    if (cyclic) {
+    const bool cyclic    = opts["interval"].count();
+    const bool on_signal = opts["register-signal"].count();
+    if (cyclic || on_signal) {
         pid_t shm_owner_pid = 0;
         if (opts.count("pid") == 0) {
             std::cerr << "Warning: No SHM owner PID provided.\n"
@@ -257,29 +261,42 @@ auto main(int argc, char **argv) -> int {
             shm_owner_pid = opts["pid"].as<pid_t>();
         }
 
-        // check interval
-        const auto                interval     = opts["interval"].as<unsigned>();
-        static constexpr unsigned MIN_INTERVAL = 10;
-        if (interval < MIN_INTERVAL) {
-            std::cerr << "interval to short. (min: " << MIN_INTERVAL << ")\n";
-            return EX_USAGE;
+        if (opts.count("register-signal") > 0) {
+            const auto modbus_client_pid = opts["register-signal"].as<pid_t>();
+            int        tmp               = kill(modbus_client_pid, SIGUSR1);
+            if (tmp == -1) {
+                perror("failed to send SIGUSR1 to modbus client");
+                return EX_OSERR;
+            }
         }
 
         // signal set
         sigset_t sleep_sigset;
         sigemptyset(&sleep_sigset);
         sigaddset(&sleep_sigset, SIGALRM);
+        sigaddset(&sleep_sigset, SIGUSR1);
         sigprocmask(SIG_BLOCK, &sleep_sigset, nullptr);
         sigaddset(&sleep_sigset, SIGINT);   // add to sigwait, but do not block
         sigaddset(&sleep_sigset, SIGTERM);  // add to sigwait, but do not block
 
-        // start timer
-        const struct timeval interval_time {
-            static_cast<__time_t>(interval / 1000),                           // NOLINT
+        std::unique_ptr<cxxitimer::ITimer_Real> interval_timer;
+        if (cyclic) {
+            // check interval
+            const auto                interval     = opts["interval"].as<unsigned>();
+            static constexpr unsigned MIN_INTERVAL = 10;
+            if (interval < MIN_INTERVAL) {
+                std::cerr << "interval to short. (min: " << MIN_INTERVAL << ")\n";
+                return EX_USAGE;
+            }
+
+            // start timer
+            const struct timeval interval_time {
+                    static_cast<__time_t>(interval / 1000),                   // NOLINT
                     static_cast<__syscall_slong_t>((interval % 1000) * 1000)  // NOLINT
-        };
-        cxxitimer::ITimer_Real interval_timer(interval_time);
-        interval_timer.start();
+            };
+            interval_timer = std::make_unique<cxxitimer::ITimer_Real>(interval_time);
+            interval_timer->start();
+        }
 
         while (true) {
             // execute
@@ -295,7 +312,7 @@ auto main(int argc, char **argv) -> int {
                 exit(EX_OSERR);
             }
 
-            if (sig != SIGALRM) break;
+            if (sig != SIGALRM && sig != SIGUSR1) break;
 
             // check shm owner pid
             if (shm_owner_pid) {
